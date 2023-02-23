@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.*;
 import io.micrometer.core.instrument.binder.BaseUnits;
 import io.undertow.Undertow;
 import io.undertow.server.ConnectorStatistics;
+import io.undertow.server.handlers.MetricsHandler;
 import io.undertow.server.session.SessionManagerStatistics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -38,6 +39,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
 
 /**
  * Undertow Metrics
@@ -50,6 +53,13 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 	 * Prefix used for all Undertow metric names.
 	 */
 	public static final String UNDERTOW_METRIC_NAME_PREFIX = "undertow";
+	/**
+	 * Request
+	 */
+	private static final String METRIC_NAME_REQUESTS 							= UNDERTOW_METRIC_NAME_PREFIX + ".request.count";
+	private static final String METRIC_NAME_REQUEST_ERRORS						= UNDERTOW_METRIC_NAME_PREFIX + ".request.errors";
+	private static final String METRIC_NAME_REQUEST_TIME_MAX					= UNDERTOW_METRIC_NAME_PREFIX + ".request.time.max";
+	private static final String METRIC_NAME_REQUEST_TIME_MIN					= UNDERTOW_METRIC_NAME_PREFIX + ".request.time.min";
 	/**
 	 * XWorker
 	 */
@@ -84,21 +94,27 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 
 	private static final Field UNDERTOW_FIELD;
 	private final Iterable<Tag> tags;
+	private final UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper;
 
-	public UndertowMetrics() {
+	public UndertowMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
+		this.undertowMetricsHandlerWrapper = undertowMetricsHandlerWrapper;
 		this.tags = Collections.emptyList();
 	}
 
 	@Override
 	public void onApplicationEvent(ApplicationStartedEvent event) {
+		// Get Application Context
 		ConfigurableApplicationContext applicationContext = event.getApplicationContext();
-		// find UndertowWebServer
+		// Find UndertowWebServer
 		UndertowWebServer undertowWebServer = findUndertowWebServer(applicationContext);
 		if (undertowWebServer == null) {
 			return;
 		}
+		// Find Undertow
 		Undertow undertow = getUndertow(undertowWebServer);
+		// Find XnioWorkerMXBean
 		XnioWorkerMXBean xWorker = undertow.getWorker().getMXBean();
+		// Find MeterRegistry
 		MeterRegistry registry = applicationContext.getBean(MeterRegistry.class);
 		// xWorker 指标
 		registerXWorker(registry, xWorker);
@@ -106,13 +122,44 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 		List<Undertow.ListenerInfo> listenerInfoList = undertow.getListenerInfo();
 		listenerInfoList.forEach(listenerInfo -> registerConnectorStatistics(registry, listenerInfo));
 		// 如果是 web 监控，添加 session 指标
-		if (undertowWebServer instanceof UndertowServletWebServer webServer) {
-			SessionManagerStatistics statistics = webServer.getDeploymentManager()
+		if (undertowWebServer instanceof UndertowServletWebServer) {
+			SessionManagerStatistics statistics = ((UndertowServletWebServer)undertowWebServer).getDeploymentManager()
 				.getDeployment()
 				.getSessionManager()
 				.getStatistics();
 			registerSessionStatistics(registry, statistics);
 		}
+		bind(registry, undertowMetricsHandlerWrapper.getMetricsHandler());
+	}
+
+	public void bind(MeterRegistry registry, MetricsHandler metricsHandler) {
+		bindTimer(registry, METRIC_NAME_REQUESTS, "Number of requests", metricsHandler,
+				m -> m.getMetrics().getTotalRequests(), m2 -> m2.getMetrics().getMinRequestTime());
+		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MAX, "The longest request duration in time", metricsHandler,
+				m -> m.getMetrics().getMaxRequestTime());
+		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MIN, "The shortest request duration in time", metricsHandler,
+				m -> m.getMetrics().getMinRequestTime());
+		bindCounter(registry, METRIC_NAME_REQUEST_ERRORS, "Total number of error requests ", metricsHandler,
+				m -> m.getMetrics().getTotalErrors());
+
+	}
+
+	private void bindTimer(MeterRegistry registry, String name, String desc, MetricsHandler metricsHandler,
+						   ToLongFunction<MetricsHandler> countFunc, ToDoubleFunction<MetricsHandler> consumer) {
+		FunctionTimer.builder(name, metricsHandler, countFunc, consumer, TimeUnit.MILLISECONDS)
+				.description(desc).register(registry);
+	}
+
+	private void bindTimeGauge(MeterRegistry registry, String name, String desc, MetricsHandler metricResult,
+							   ToDoubleFunction<MetricsHandler> consumer) {
+		TimeGauge.builder(name, metricResult, TimeUnit.MILLISECONDS, consumer).description(desc)
+				.register(registry);
+	}
+
+	private void bindCounter(MeterRegistry registry, String name, String desc, MetricsHandler metricsHandler,
+							 ToDoubleFunction<MetricsHandler> consumer) {
+		FunctionCounter.builder(name, metricsHandler, consumer).description(desc)
+				.register(registry);
 	}
 
 	private void registerXWorker(MeterRegistry registry, XnioWorkerMXBean workerMXBean) {
@@ -247,14 +294,17 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 
 	private static UndertowWebServer findUndertowWebServer(ConfigurableApplicationContext applicationContext) {
 		WebServer webServer;
-		if (applicationContext instanceof ReactiveWebServerApplicationContext context) {
+		if (applicationContext instanceof ReactiveWebServerApplicationContext) {
+			ReactiveWebServerApplicationContext context = (ReactiveWebServerApplicationContext) applicationContext;
 			webServer = context.getWebServer();
-		} else if (applicationContext instanceof ServletWebServerApplicationContext context) {
+		} else if (applicationContext instanceof ServletWebServerApplicationContext) {
+			ServletWebServerApplicationContext context = (ServletWebServerApplicationContext) applicationContext;
 			webServer = context.getWebServer();
 		} else {
 			return null;
 		}
-		if (webServer instanceof UndertowWebServer server) {
+		if (webServer instanceof UndertowWebServer) {
+			UndertowWebServer server = (UndertowWebServer) webServer;
 			return server;
 		}
 		return null;

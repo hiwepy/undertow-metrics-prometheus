@@ -363,8 +363,6 @@
         <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
 		<maven-nexus-staging-plugin.version>1.6.8</maven-nexus-staging-plugin.version>
 		<micrometer.version>1.10.4</micrometer.version>
-		<druid.version>1.2.16</druid.version>
-		<sentinel.version>1.8.6</sentinel.version>
 	</properties>
 
 	<dependencies>

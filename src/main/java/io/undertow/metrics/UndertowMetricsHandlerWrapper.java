@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 /**
  * https://frandorado.github.io/spring/2020/03/31/spring-actuator-undertow.html
  */
-@Component
 public class UndertowMetricsHandlerWrapper implements HandlerWrapper {
 
     private MetricsHandler metricsHandler;

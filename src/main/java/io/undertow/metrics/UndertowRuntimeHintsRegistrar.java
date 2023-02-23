@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
 
 package io.undertow.metrics;
 
@@ -25,11 +26,7 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.Objects;
 
-/**
- * mica-metrics native 支持
- *
- * @author L.cm
- */
+
 class UndertowRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 
 	@Override
@@ -43,3 +40,4 @@ class UndertowRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
 	}
 
 }
+*/

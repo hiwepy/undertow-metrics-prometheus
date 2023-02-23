@@ -18,27 +18,35 @@ package io.undertow.metrics;
 
 import io.undertow.Undertow;
 import io.undertow.UndertowOptions;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
 import org.springframework.boot.web.embedded.undertow.UndertowBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ImportRuntimeHints;
-
 
 /**
  * Undertow Metrics 配置
  *
  * @author L.cm
  */
-@AutoConfiguration(before = ServletWebServerFactoryAutoConfiguration.class)
+
+@AutoConfigureAfter(value =  {MetricsAutoConfiguration.class, SimpleMetricsExportAutoConfiguration.class})
+@AutoConfigureBefore(value = {ServletWebServerFactoryAutoConfiguration.class})
 @ConditionalOnClass(Undertow.class)
-@ImportRuntimeHints(UndertowRuntimeHintsRegistrar.class)
-public class UndertowMetricsConfiguration {
+// @ImportRuntimeHints(UndertowRuntimeHintsRegistrar.class)
+public class UndertowMetricsAutoConfiguration {
 
 	@Bean
-	public UndertowMetrics undertowMetrics() {
-		return new UndertowMetrics();
+	public UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper() {
+		return new UndertowMetricsHandlerWrapper();
+	}
+
+	@Bean
+	public UndertowMetrics undertowMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
+		return new UndertowMetrics(undertowMetricsHandlerWrapper);
 	}
 
 	@Bean
