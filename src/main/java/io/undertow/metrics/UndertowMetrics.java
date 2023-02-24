@@ -93,6 +93,10 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 	private static final String METRIC_NAME_SESSIONS_ALIVE_MAX 					= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.alive.max";
 
 	private static final Field UNDERTOW_FIELD;
+	private static final String METRIC_CATEGORY = "name";
+	private static final String METRIC_TAG_PROTOCOL = "protocol";
+
+
 	private final Iterable<Tag> tags;
 	private final UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper;
 
@@ -133,32 +137,34 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 	}
 
 	public void bind(MeterRegistry registry, MetricsHandler metricsHandler) {
-		bindTimer(registry, METRIC_NAME_REQUESTS, "Number of requests", metricsHandler,
-				m -> m.getMetrics().getTotalRequests(), m2 -> m2.getMetrics().getMinRequestTime());
-		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MAX, "The longest request duration in time", metricsHandler,
-				m -> m.getMetrics().getMaxRequestTime());
-		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MIN, "The shortest request duration in time", metricsHandler,
-				m -> m.getMetrics().getMinRequestTime());
-		bindCounter(registry, METRIC_NAME_REQUEST_ERRORS, "Total number of error requests ", metricsHandler,
-				m -> m.getMetrics().getTotalErrors());
-
+		bindTimer(registry, METRIC_NAME_REQUESTS, "Number of requests", metricsHandler, m -> m.getMetrics().getTotalRequests(), m2 -> m2.getMetrics().getMinRequestTime());
+		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MAX, "The longest request duration in time", metricsHandler, m -> m.getMetrics().getMaxRequestTime());
+		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MIN, "The shortest request duration in time", metricsHandler, m -> m.getMetrics().getMinRequestTime());
+		bindCounter(registry, METRIC_NAME_REQUEST_ERRORS, "Total number of error requests ", metricsHandler, m -> m.getMetrics().getTotalErrors());
 	}
 
-	private void bindTimer(MeterRegistry registry, String name, String desc, MetricsHandler metricsHandler,
-						   ToLongFunction<MetricsHandler> countFunc, ToDoubleFunction<MetricsHandler> consumer) {
+	private <T> void bindTimer(MeterRegistry registry, String name, String desc, T metricsHandler, ToLongFunction<T> countFunc, ToDoubleFunction<T> consumer) {
 		FunctionTimer.builder(name, metricsHandler, countFunc, consumer, TimeUnit.MILLISECONDS)
-				.description(desc).register(registry);
-	}
-
-	private void bindTimeGauge(MeterRegistry registry, String name, String desc, MetricsHandler metricResult,
-							   ToDoubleFunction<MetricsHandler> consumer) {
-		TimeGauge.builder(name, metricResult, TimeUnit.MILLISECONDS, consumer).description(desc)
+				.description(desc)
+				.tags(tags)
+				//.tag(METRIC_CATEGORY, workerMXBean.getName())
 				.register(registry);
 	}
 
-	private void bindCounter(MeterRegistry registry, String name, String desc, MetricsHandler metricsHandler,
-							 ToDoubleFunction<MetricsHandler> consumer) {
-		FunctionCounter.builder(name, metricsHandler, consumer).description(desc)
+	private <T> void bindTimeGauge(MeterRegistry registry, String name, String desc, T metricResult,
+							   ToDoubleFunction<T> consumer) {
+		TimeGauge.builder(name, metricResult, TimeUnit.MILLISECONDS, consumer)
+				.description(desc)
+				.tags(tags)
+				//.tag(METRIC_CATEGORY, workerMXBean.getName())
+				.register(registry);
+	}
+
+	private <T> void bindCounter(MeterRegistry registry, String name, String desc, T metricsHandler, ToDoubleFunction<T> consumer) {
+		FunctionCounter.builder(name, metricsHandler, consumer)
+				.description(desc)
+				.tags(tags)
+				//.tag(METRIC_CATEGORY, workerMXBean.getName())
 				.register(registry);
 	}
 
@@ -166,32 +172,41 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 		Gauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_CORE_SIZE, workerMXBean, XnioWorkerMXBean::getCoreWorkerPoolSize)
 			.description("XWork core worker pool size")
 			.tags(tags)
-			.tag("name", workerMXBean.getName())
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
 			.register(registry);
+
+		// Number of worker threads. The default is 8 times the number of I/O threads.
+		TimeGauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_CORE_SIZE, workerMXBean, TimeUnit.MILLISECONDS, XnioWorkerMXBean::getCoreWorkerPoolSize)
+			.description("XWork core worker pool size")
+			.tags(tags)
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
+			.register(registry);
+
 		Gauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_MAX_SIZE, workerMXBean, XnioWorkerMXBean::getMaxWorkerPoolSize)
 			.description("XWork max worker pool size")
 			.tags(tags)
-			.tag("name", workerMXBean.getName())
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
 			.register(registry);
 		Gauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_SIZE, workerMXBean, XnioWorkerMXBean::getWorkerPoolSize)
 			.description("XWork worker pool size")
 			.tags(tags)
-			.tag("name", workerMXBean.getName())
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
 			.register(registry);
 		Gauge.builder(METRIC_NAME_X_WORK_WORKER_THREAD_BUSY_COUNT, workerMXBean, XnioWorkerMXBean::getBusyWorkerThreadCount)
 			.description("XWork busy worker thread count")
 			.tags(tags)
-			.tag("name", workerMXBean.getName())
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
 			.register(registry);
+		//  Number of I/O threads to create for the worker.
 		Gauge.builder(METRIC_NAME_X_WORK_IO_THREAD_COUNT, workerMXBean, XnioWorkerMXBean::getIoThreadCount)
-			.description("XWork io thread count")
+			.description("XWork I/O thread count")
 			.tags(tags)
-			.tag("name", workerMXBean.getName())
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
 			.register(registry);
 		Gauge.builder(METRIC_NAME_X_WORK_WORKER_QUEUE_SIZE, workerMXBean, XnioWorkerMXBean::getWorkerQueueSize)
 			.description("XWork worker queue size")
 			.tags(tags)
-			.tag("name", workerMXBean.getName())
+			.tag(METRIC_CATEGORY, workerMXBean.getName())
 			.register(registry);
 	}
 
@@ -200,53 +215,53 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 		ConnectorStatistics statistics = listenerInfo.getConnectorStatistics();
 		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_COUNT, statistics, ConnectorStatistics::getRequestCount)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.register(registry);
 		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_ERROR_COUNT, statistics, ConnectorStatistics::getErrorCount)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.register(registry);
 		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_ACTIVE, statistics, ConnectorStatistics::getActiveRequests)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.CONNECTIONS)
 			.register(registry);
 		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_ACTIVE_MAX, statistics, ConnectorStatistics::getMaxActiveRequests)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.CONNECTIONS)
 			.register(registry);
 
 		Gauge.builder(METRIC_NAME_CONNECTORS_BYTES_SENT, statistics, ConnectorStatistics::getBytesSent)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.BYTES)
 			.register(registry);
 		Gauge.builder(METRIC_NAME_CONNECTORS_BYTES_RECEIVED, statistics, ConnectorStatistics::getBytesReceived)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.BYTES)
 			.register(registry);
 
 		Gauge.builder(METRIC_NAME_CONNECTORS_PROCESSING_TIME, statistics, (s) -> TimeUnit.NANOSECONDS.toMillis(s.getProcessingTime()))
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.MILLISECONDS)
 			.register(registry);
 		Gauge.builder(METRIC_NAME_CONNECTORS_PROCESSING_TIME_MAX, statistics, (s) -> TimeUnit.NANOSECONDS.toMillis(s.getMaxProcessingTime()))
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.MILLISECONDS)
 			.register(registry);
 
 		Gauge.builder(METRIC_NAME_CONNECTORS_CONNECTIONS_ACTIVE, statistics, ConnectorStatistics::getActiveConnections)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.CONNECTIONS)
 			.register(registry);
 		Gauge.builder(METRIC_NAME_CONNECTORS_CONNECTIONS_ACTIVE_MAX, statistics, ConnectorStatistics::getMaxActiveConnections)
 			.tags(tags)
-			.tag("protocol", protocol)
+			.tag(METRIC_TAG_PROTOCOL, protocol)
 			.baseUnit(BaseUnits.CONNECTIONS)
 			.register(registry);
 	}
