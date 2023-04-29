@@ -45,8 +45,18 @@ public class UndertowMetricsAutoConfiguration {
 	}
 
 	@Bean
-	public UndertowMetrics undertowMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
-		return new UndertowMetrics(undertowMetricsHandlerWrapper);
+	public UndertowConnectorMetrics undertowConnectorMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
+		return new UndertowConnectorMetrics(undertowMetricsHandlerWrapper.getMetricsHandler());
+	}
+
+	@Bean
+	public UndertowSessionMetrics undertowSessionMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
+		return new UndertowSessionMetrics(undertowMetricsHandlerWrapper.getMetricsHandler());
+	}
+
+	@Bean
+	public UndertowXWorkerMetrics undertowXWorkerMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
+		return new UndertowXWorkerMetrics(undertowMetricsHandlerWrapper.getMetricsHandler());
 	}
 
 	@Bean

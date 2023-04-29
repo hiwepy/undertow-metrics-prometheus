@@ -1,15 +1,14 @@
 package com.github.hiwepy.ip2region.spring.boot;
 
-import java.io.ByteArrayOutputStream;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.nutz.plugins.ip2region.DBReader;
 import org.nutz.plugins.ip2region.DbConfig;
 import org.nutz.plugins.ip2region.DbSearcher;
 import org.nutz.plugins.ip2region.impl.ByteArrayDBReader;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.util.FileCopyUtils;
+
+import java.io.ByteArrayOutputStream;
 
 public class DbSearcher_Test {
 

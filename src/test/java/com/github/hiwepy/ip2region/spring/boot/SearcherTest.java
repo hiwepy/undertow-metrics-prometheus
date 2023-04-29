@@ -1,7 +1,7 @@
 package com.github.hiwepy.ip2region.spring.boot;
 
 import org.lionsoul.ip2region.xdb.Searcher;
-import java.io.*;
+
 import java.util.concurrent.TimeUnit;
 
 public class SearcherTest {

@@ -15,15 +15,14 @@
  */
 package com.github.hiwepy.ip2region.spring.boot;
 
-import java.io.IOException;
-
-import javax.annotation.PostConstruct;
-
 import com.github.hiwepy.ip2region.spring.boot.ext.RegionAddress;
 import com.github.hiwepy.ip2region.spring.boot.ext.RegionEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import javax.annotation.PostConstruct;
+import java.io.IOException;
 
 @SpringBootApplication
 public class Application {

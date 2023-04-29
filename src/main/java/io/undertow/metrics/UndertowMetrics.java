@@ -16,15 +16,12 @@
 
 package io.undertow.metrics;
 
+import io.micrometer.common.lang.NonNull;
 import io.micrometer.core.instrument.*;
-import io.micrometer.core.instrument.binder.BaseUnits;
+import io.micrometer.core.instrument.binder.MeterBinder;
 import io.undertow.Undertow;
-import io.undertow.server.ConnectorStatistics;
 import io.undertow.server.handlers.MetricsHandler;
-import io.undertow.server.session.SessionManagerStatistics;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.boot.web.embedded.undertow.UndertowServletWebServer;
 import org.springframework.boot.web.embedded.undertow.UndertowWebServer;
 import org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext;
 import org.springframework.boot.web.server.WebServer;
@@ -32,11 +29,9 @@ import org.springframework.boot.web.servlet.context.ServletWebServerApplicationC
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ReflectionUtils;
-import org.xnio.management.XnioWorkerMXBean;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToDoubleFunction;
@@ -47,8 +42,8 @@ import java.util.function.ToLongFunction;
  *
  * @author L.cm
  */
-@RequiredArgsConstructor
-public class UndertowMetrics implements ApplicationListener<ApplicationStartedEvent> {
+public abstract class UndertowMetrics implements MeterBinder, ApplicationListener<ApplicationStartedEvent> {
+
 	/**
 	 * Prefix used for all Undertow metric names.
 	 */
@@ -60,90 +55,70 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 	private static final String METRIC_NAME_REQUEST_ERRORS						= UNDERTOW_METRIC_NAME_PREFIX + ".request.errors";
 	private static final String METRIC_NAME_REQUEST_TIME_MAX					= UNDERTOW_METRIC_NAME_PREFIX + ".request.time.max";
 	private static final String METRIC_NAME_REQUEST_TIME_MIN					= UNDERTOW_METRIC_NAME_PREFIX + ".request.time.min";
-	/**
-	 * XWorker
-	 */
-	private static final String METRIC_NAME_X_WORK_WORKER_POOL_CORE_SIZE 		= UNDERTOW_METRIC_NAME_PREFIX + ".xwork.worker.pool.core.size";
-	private static final String METRIC_NAME_X_WORK_WORKER_POOL_MAX_SIZE 		= UNDERTOW_METRIC_NAME_PREFIX + ".xwork.worker.pool.max.size";
-	private static final String METRIC_NAME_X_WORK_WORKER_POOL_SIZE 			= UNDERTOW_METRIC_NAME_PREFIX + ".xwork.worker.pool.size";
-	private static final String METRIC_NAME_X_WORK_WORKER_THREAD_BUSY_COUNT 	= UNDERTOW_METRIC_NAME_PREFIX + ".xwork.worker.thread.busy.count";
-	private static final String METRIC_NAME_X_WORK_IO_THREAD_COUNT 				= UNDERTOW_METRIC_NAME_PREFIX + ".xwork.io.thread.count";
-	private static final String METRIC_NAME_X_WORK_WORKER_QUEUE_SIZE 			= UNDERTOW_METRIC_NAME_PREFIX + ".xwork.worker.queue.size";
-	/**
-	 * connectors
-	 */
-	private static final String METRIC_NAME_CONNECTORS_REQUESTS_COUNT 			= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.requests.count";
-	private static final String METRIC_NAME_CONNECTORS_REQUESTS_ERROR_COUNT 	= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.requests.error.count";
-	private static final String METRIC_NAME_CONNECTORS_REQUESTS_ACTIVE 			= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.requests.active";
-	private static final String METRIC_NAME_CONNECTORS_REQUESTS_ACTIVE_MAX 		= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.requests.active.max";
-	private static final String METRIC_NAME_CONNECTORS_BYTES_SENT 				= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.bytes.sent";
-	private static final String METRIC_NAME_CONNECTORS_BYTES_RECEIVED 			= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.bytes.received";
-	private static final String METRIC_NAME_CONNECTORS_PROCESSING_TIME 			= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.processing.time";
-	private static final String METRIC_NAME_CONNECTORS_PROCESSING_TIME_MAX 		= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.processing.time.max";
-	private static final String METRIC_NAME_CONNECTORS_CONNECTIONS_ACTIVE 		= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.connections.active";
-	private static final String METRIC_NAME_CONNECTORS_CONNECTIONS_ACTIVE_MAX 	= UNDERTOW_METRIC_NAME_PREFIX + ".connectors.connections.active.max";
-	/**
-	 * session
-	 */
-	private static final String METRIC_NAME_SESSIONS_ACTIVE_MAX 				= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.active.max";
-	private static final String METRIC_NAME_SESSIONS_ACTIVE_CURRENT 			= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.active.current";
-	private static final String METRIC_NAME_SESSIONS_CREATED 					= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.created";
-	private static final String METRIC_NAME_SESSIONS_EXPIRED 					= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.expired";
-	private static final String METRIC_NAME_SESSIONS_REJECTED 					= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.rejected";
-	private static final String METRIC_NAME_SESSIONS_ALIVE_MAX 					= UNDERTOW_METRIC_NAME_PREFIX + ".sessions.alive.max";
 
 	private static final Field UNDERTOW_FIELD;
-	private static final String METRIC_CATEGORY = "name";
 	private static final String METRIC_TAG_PROTOCOL = "protocol";
 
+	private UndertowWebServer undertowWebServer;
+	private MetricsHandler metricsHandler;
+	private Undertow undertow;
+	private String namePrefix;
+	private Iterable<Tag> tags;
 
-	private final Iterable<Tag> tags;
-	private final UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper;
+	public UndertowMetrics(MetricsHandler metricsHandler) {
+		this(metricsHandler, UNDERTOW_METRIC_NAME_PREFIX);
+	}
 
-	public UndertowMetrics(UndertowMetricsHandlerWrapper undertowMetricsHandlerWrapper) {
-		this.undertowMetricsHandlerWrapper = undertowMetricsHandlerWrapper;
+	public UndertowMetrics(MetricsHandler metricsHandler, String namePrefix) {
+		this(metricsHandler, namePrefix, Collections.emptyList());
+	}
+
+	public UndertowMetrics(MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags) {
+		this.metricsHandler = metricsHandler;
+		this.namePrefix = namePrefix;
 		this.tags = Collections.emptyList();
 	}
 
 	@Override
 	public void onApplicationEvent(ApplicationStartedEvent event) {
-		// Get Application Context
-		ConfigurableApplicationContext applicationContext = event.getApplicationContext();
 		// Find UndertowWebServer
-		UndertowWebServer undertowWebServer = findUndertowWebServer(applicationContext);
+		UndertowWebServer undertowWebServer = findUndertowWebServer(event.getApplicationContext());
 		if (undertowWebServer == null) {
 			return;
 		}
+		this.undertowWebServer = undertowWebServer;
 		// Find Undertow
 		Undertow undertow = getUndertow(undertowWebServer);
-		// Find XnioWorkerMXBean
-		XnioWorkerMXBean xWorker = undertow.getWorker().getMXBean();
-		// Find MeterRegistry
-		MeterRegistry registry = applicationContext.getBean(MeterRegistry.class);
-		// xWorker 指标
-		registerXWorker(registry, xWorker);
-		// 连接信息指标
-		List<Undertow.ListenerInfo> listenerInfoList = undertow.getListenerInfo();
-		listenerInfoList.forEach(listenerInfo -> registerConnectorStatistics(registry, listenerInfo));
-		// 如果是 web 监控，添加 session 指标
-		if (undertowWebServer instanceof UndertowServletWebServer) {
-			SessionManagerStatistics statistics = ((UndertowServletWebServer)undertowWebServer).getDeploymentManager()
-				.getDeployment()
-				.getSessionManager()
-				.getStatistics();
-			registerSessionStatistics(registry, statistics);
+		if (undertow == null) {
+			return;
 		}
-		bind(registry, undertowMetricsHandlerWrapper.getMetricsHandler());
+		this.undertow = undertow;
+		// Find MeterRegistry
+		MeterRegistry registry = event.getApplicationContext().getBean(MeterRegistry.class);
+		this.bindTo(registry);
 	}
 
-	public void bind(MeterRegistry registry, MetricsHandler metricsHandler) {
-		bindTimer(registry, METRIC_NAME_REQUESTS, "Number of requests", metricsHandler, m -> m.getMetrics().getTotalRequests(), m2 -> m2.getMetrics().getMinRequestTime());
-		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MAX, "The longest request duration in time", metricsHandler, m -> m.getMetrics().getMaxRequestTime());
-		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MIN, "The shortest request duration in time", metricsHandler, m -> m.getMetrics().getMinRequestTime());
-		bindCounter(registry, METRIC_NAME_REQUEST_ERRORS, "Total number of error requests ", metricsHandler, m -> m.getMetrics().getTotalErrors());
+	@Override
+	public void bindTo(MeterRegistry registry) {
+
+		bindTimer(registry, METRIC_NAME_REQUESTS, "Number of requests", metricsHandler, m -> m.getMetrics().getTotalRequests(), m2 -> m2.getMetrics().getMinRequestTime(), tags);
+		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MAX, "The longest request duration in time", metricsHandler, m -> m.getMetrics().getMaxRequestTime(), tags);
+		bindTimeGauge(registry, METRIC_NAME_REQUEST_TIME_MIN, "The shortest request duration in time", metricsHandler, m -> m.getMetrics().getMinRequestTime(), tags);
+		bindCounter(registry, METRIC_NAME_REQUEST_ERRORS, "Total number of error requests ", metricsHandler, m -> m.getMetrics().getTotalErrors(), tags);
+
+		bindTo(registry, undertowWebServer, undertow, metricsHandler,  namePrefix, tags);
 	}
 
-	private <T> void bindTimer(MeterRegistry registry, String name, String desc, T metricsHandler, ToLongFunction<T> countFunc, ToDoubleFunction<T> consumer) {
+	/**
+	 * Bind metrics to the given registry.
+	 * @param registry
+	 * @param undertow
+	 * @param tags
+	 */
+	abstract void bindTo(@NonNull MeterRegistry registry, UndertowWebServer undertowWebServer, Undertow undertow, MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags);
+
+
+	protected  <T> void bindTimer(MeterRegistry registry, String name, String desc, T metricsHandler, ToLongFunction<T> countFunc, ToDoubleFunction<T> consumer, Iterable<Tag> tags) {
 		FunctionTimer.builder(name, metricsHandler, countFunc, consumer, TimeUnit.MILLISECONDS)
 				.description(desc)
 				.tags(tags)
@@ -151,8 +126,16 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 				.register(registry);
 	}
 
-	private <T> void bindTimeGauge(MeterRegistry registry, String name, String desc, T metricResult,
-							   ToDoubleFunction<T> consumer) {
+	protected <T> void bindGauge(MeterRegistry registry, String name, String desc, T metricResult,
+								 ToDoubleFunction<T> consumer, Iterable<Tag> tags) {
+		Gauge.builder(name, metricResult, consumer)
+				.description(desc)
+				.tags(tags)
+				.register(registry);
+	}
+
+	protected <T> void bindTimeGauge(MeterRegistry registry, String name, String desc, T metricResult,
+							   ToDoubleFunction<T> consumer, Iterable<Tag> tags) {
 		TimeGauge.builder(name, metricResult, TimeUnit.MILLISECONDS, consumer)
 				.description(desc)
 				.tags(tags)
@@ -160,141 +143,12 @@ public class UndertowMetrics implements ApplicationListener<ApplicationStartedEv
 				.register(registry);
 	}
 
-	private <T> void bindCounter(MeterRegistry registry, String name, String desc, T metricsHandler, ToDoubleFunction<T> consumer) {
+	protected <T> void bindCounter(MeterRegistry registry, String name, String desc, T metricsHandler, ToDoubleFunction<T> consumer, Iterable<Tag> tags) {
 		FunctionCounter.builder(name, metricsHandler, consumer)
 				.description(desc)
 				.tags(tags)
 				//.tag(METRIC_CATEGORY, workerMXBean.getName())
 				.register(registry);
-	}
-
-	private void registerXWorker(MeterRegistry registry, XnioWorkerMXBean workerMXBean) {
-		Gauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_CORE_SIZE, workerMXBean, XnioWorkerMXBean::getCoreWorkerPoolSize)
-			.description("XWork core worker pool size")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-
-		// Number of worker threads. The default is 8 times the number of I/O threads.
-		TimeGauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_CORE_SIZE, workerMXBean, TimeUnit.MILLISECONDS, XnioWorkerMXBean::getCoreWorkerPoolSize)
-			.description("XWork core worker pool size")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-
-		Gauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_MAX_SIZE, workerMXBean, XnioWorkerMXBean::getMaxWorkerPoolSize)
-			.description("XWork max worker pool size")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-		Gauge.builder(METRIC_NAME_X_WORK_WORKER_POOL_SIZE, workerMXBean, XnioWorkerMXBean::getWorkerPoolSize)
-			.description("XWork worker pool size")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-		Gauge.builder(METRIC_NAME_X_WORK_WORKER_THREAD_BUSY_COUNT, workerMXBean, XnioWorkerMXBean::getBusyWorkerThreadCount)
-			.description("XWork busy worker thread count")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-		//  Number of I/O threads to create for the worker.
-		Gauge.builder(METRIC_NAME_X_WORK_IO_THREAD_COUNT, workerMXBean, XnioWorkerMXBean::getIoThreadCount)
-			.description("XWork I/O thread count")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-		Gauge.builder(METRIC_NAME_X_WORK_WORKER_QUEUE_SIZE, workerMXBean, XnioWorkerMXBean::getWorkerQueueSize)
-			.description("XWork worker queue size")
-			.tags(tags)
-			.tag(METRIC_CATEGORY, workerMXBean.getName())
-			.register(registry);
-	}
-
-	private void registerConnectorStatistics(MeterRegistry registry, Undertow.ListenerInfo listenerInfo) {
-		String protocol = listenerInfo.getProtcol();
-		ConnectorStatistics statistics = listenerInfo.getConnectorStatistics();
-		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_COUNT, statistics, ConnectorStatistics::getRequestCount)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.register(registry);
-		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_ERROR_COUNT, statistics, ConnectorStatistics::getErrorCount)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.register(registry);
-		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_ACTIVE, statistics, ConnectorStatistics::getActiveRequests)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.CONNECTIONS)
-			.register(registry);
-		Gauge.builder(METRIC_NAME_CONNECTORS_REQUESTS_ACTIVE_MAX, statistics, ConnectorStatistics::getMaxActiveRequests)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.CONNECTIONS)
-			.register(registry);
-
-		Gauge.builder(METRIC_NAME_CONNECTORS_BYTES_SENT, statistics, ConnectorStatistics::getBytesSent)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.BYTES)
-			.register(registry);
-		Gauge.builder(METRIC_NAME_CONNECTORS_BYTES_RECEIVED, statistics, ConnectorStatistics::getBytesReceived)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.BYTES)
-			.register(registry);
-
-		Gauge.builder(METRIC_NAME_CONNECTORS_PROCESSING_TIME, statistics, (s) -> TimeUnit.NANOSECONDS.toMillis(s.getProcessingTime()))
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.MILLISECONDS)
-			.register(registry);
-		Gauge.builder(METRIC_NAME_CONNECTORS_PROCESSING_TIME_MAX, statistics, (s) -> TimeUnit.NANOSECONDS.toMillis(s.getMaxProcessingTime()))
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.MILLISECONDS)
-			.register(registry);
-
-		Gauge.builder(METRIC_NAME_CONNECTORS_CONNECTIONS_ACTIVE, statistics, ConnectorStatistics::getActiveConnections)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.CONNECTIONS)
-			.register(registry);
-		Gauge.builder(METRIC_NAME_CONNECTORS_CONNECTIONS_ACTIVE_MAX, statistics, ConnectorStatistics::getMaxActiveConnections)
-			.tags(tags)
-			.tag(METRIC_TAG_PROTOCOL, protocol)
-			.baseUnit(BaseUnits.CONNECTIONS)
-			.register(registry);
-	}
-
-	private void registerSessionStatistics(MeterRegistry registry, SessionManagerStatistics statistics) {
-		Gauge.builder(METRIC_NAME_SESSIONS_ACTIVE_MAX, statistics, SessionManagerStatistics::getMaxActiveSessions)
-			.tags(tags)
-			.baseUnit(BaseUnits.SESSIONS)
-			.register(registry);
-
-		Gauge.builder(METRIC_NAME_SESSIONS_ACTIVE_CURRENT, statistics, SessionManagerStatistics::getActiveSessionCount)
-			.tags(tags)
-			.baseUnit(BaseUnits.SESSIONS)
-			.register(registry);
-
-		FunctionCounter.builder(METRIC_NAME_SESSIONS_CREATED, statistics, SessionManagerStatistics::getCreatedSessionCount)
-			.tags(tags)
-			.baseUnit(BaseUnits.SESSIONS)
-			.register(registry);
-
-		FunctionCounter.builder(METRIC_NAME_SESSIONS_EXPIRED, statistics, SessionManagerStatistics::getExpiredSessionCount)
-			.tags(tags)
-			.baseUnit(BaseUnits.SESSIONS)
-			.register(registry);
-
-		FunctionCounter.builder(METRIC_NAME_SESSIONS_REJECTED, statistics, SessionManagerStatistics::getRejectedSessions)
-			.tags(tags)
-			.baseUnit(BaseUnits.SESSIONS)
-			.register(registry);
-
-		TimeGauge.builder(METRIC_NAME_SESSIONS_ALIVE_MAX, statistics, TimeUnit.SECONDS, SessionManagerStatistics::getHighestSessionCount)
-			.tags(tags)
-			.register(registry);
 	}
 
 	static {

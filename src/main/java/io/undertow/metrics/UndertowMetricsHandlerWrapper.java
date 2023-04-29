@@ -3,7 +3,6 @@ package io.undertow.metrics;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.MetricsHandler;
-import org.springframework.stereotype.Component;
 
 /**
  * https://frandorado.github.io/spring/2020/03/31/spring-actuator-undertow.html

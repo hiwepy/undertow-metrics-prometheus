@@ -4,13 +4,6 @@ import com.github.hiwepy.ip2region.spring.boot.ext.RegionAddress;
 import com.github.hiwepy.ip2region.spring.boot.ext.RegionEnum;
 import org.junit.Before;
 import org.junit.Test;
-import org.nutz.plugins.ip2region.DBReader;
-import org.nutz.plugins.ip2region.DbConfig;
-import org.nutz.plugins.ip2region.DbSearcher;
-import org.nutz.plugins.ip2region.impl.ByteArrayDBReader;
-import org.springframework.util.FileCopyUtils;
-
-import java.io.ByteArrayOutputStream;
 
 public class IP2regionXdbTemplate_Test {
 

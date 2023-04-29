@@ -1,17 +1,16 @@
 package com.github.hiwepy.ip2region.spring.boot;
 
-import java.io.ByteArrayOutputStream;
-
+import com.github.hiwepy.ip2region.spring.boot.ext.RegionAddress;
+import com.github.hiwepy.ip2region.spring.boot.ext.RegionEnum;
 import org.junit.Before;
 import org.junit.Test;
 import org.nutz.plugins.ip2region.DBReader;
 import org.nutz.plugins.ip2region.DbConfig;
 import org.nutz.plugins.ip2region.DbSearcher;
-
-import com.github.hiwepy.ip2region.spring.boot.ext.RegionAddress;
-import com.github.hiwepy.ip2region.spring.boot.ext.RegionEnum;
 import org.nutz.plugins.ip2region.impl.ByteArrayDBReader;
 import org.springframework.util.FileCopyUtils;
+
+import java.io.ByteArrayOutputStream;
 
 public class IP2regionTemplate_Test {
 
