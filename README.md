@@ -15,7 +15,7 @@ Undertow Metrics For Prometheus
 <dependency>
 	<groupId>com.github.hiwepy</groupId>
 	<artifactId>undertow-metrics-prometheus</artifactId>
-	<version>${project.version}</version>
+	<version>1.0.0.RELEASE</version>
 </dependency>
 ```
 
