@@ -1,5 +1,26 @@
-ip2region:
-  external: false
-  index-block-size: 4096
-  total-header-size: 8192
-  location: classpath*:ip2region/ip2region.db
+
+################################################################################################################
+###Spring Boot 监控（安全、开放信息等）配置：
+################################################################################################################
+management:
+  metrics:
+    tags:
+      # 在统计信息中添加自定义的标签
+      application: ${spring.application.name}
+  # 开启shutdown和health端点
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        # 指定上下文路径，启用相应端点
+        base-path: /actuator
+        include: health,shutdown,metrics,prometheus
+
+spring:
+  application:
+    name: spring-boot-actuator

@@ -34,28 +34,27 @@ public class UndertowConnectorMetrics extends UndertowMetrics {
 
 	private static final String METRIC_TAG_PROTOCOL = "protocol";
 
-	public UndertowConnectorMetrics(MetricsHandler metricsHandler) {
-		super(metricsHandler);
+	public UndertowConnectorMetrics(UndertowWebServer undertowWebServer) {
+		super(undertowWebServer);
 	}
 
-	public UndertowConnectorMetrics(MetricsHandler metricsHandler, String namePrefix) {
-		super(metricsHandler, namePrefix);
+	public UndertowConnectorMetrics(UndertowWebServer undertowWebServer, String namePrefix) {
+		super(undertowWebServer, namePrefix);
 	}
 
-	public UndertowConnectorMetrics(MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags) {
-		super(metricsHandler, namePrefix, tags);
+	public UndertowConnectorMetrics(UndertowWebServer undertowWebServer, String namePrefix, Iterable<Tag> tags) {
+		super(undertowWebServer, namePrefix, tags);
 	}
 
 	/**
 	 * Bind metrics to the given registry.
 	 * @param registry
-	 * @param undertowWebServer
 	 * @param undertow
 	 * @param namePrefix
 	 * @param tags
 	 */
 	@Override
-	public void bindTo(@NonNull MeterRegistry registry, UndertowWebServer undertowWebServer, Undertow undertow, MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags){
+	public void bindTo(@NonNull MeterRegistry registry, Undertow undertow, String namePrefix, Iterable<Tag> tags){
 		// 连接信息指标
 		List<Undertow.ListenerInfo> listenerInfoList = undertow.getListenerInfo();
 		listenerInfoList.forEach(listenerInfo -> registerConnectorStatistics(registry, listenerInfo, namePrefix, tags));

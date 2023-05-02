@@ -26,20 +26,20 @@ public class UndertowSessionMetrics extends UndertowMetrics {
 	private static final String METRIC_NAME_SESSIONS_REJECTED 					= ".sessions.rejected";
 	private static final String METRIC_NAME_SESSIONS_ALIVE_MAX 					= ".sessions.alive.max";
 
-	public UndertowSessionMetrics(MetricsHandler metricsHandler) {
-		super(metricsHandler);
+	public UndertowSessionMetrics(UndertowWebServer undertowWebServer) {
+		super(undertowWebServer);
 	}
 
-	public UndertowSessionMetrics(MetricsHandler metricsHandler, String namePrefix) {
-		super(metricsHandler, namePrefix);
+	public UndertowSessionMetrics(UndertowWebServer undertowWebServer, String namePrefix) {
+		super(undertowWebServer, namePrefix);
 	}
 
-	public UndertowSessionMetrics(MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags) {
-		super(metricsHandler, namePrefix, tags);
+	public UndertowSessionMetrics(UndertowWebServer undertowWebServer, String namePrefix, Iterable<Tag> tags) {
+		super(undertowWebServer, namePrefix, tags);
 	}
 
 	@Override
-	public void bindTo(@NonNull MeterRegistry registry, UndertowWebServer undertowWebServer, Undertow undertow, MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags){
+	public void bindTo(@NonNull MeterRegistry registry, UndertowWebServer undertowWebServer, String namePrefix, Iterable<Tag> tags){
 		// 如果是 web 监控，添加 session 指标
 		if (undertowWebServer instanceof UndertowServletWebServer) {
 			SessionManagerStatistics statistics = ((UndertowServletWebServer)undertowWebServer).getDeploymentManager()

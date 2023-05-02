@@ -29,24 +29,22 @@ public class UndertowXWorkerMetrics extends UndertowMetrics {
 
 	private static final String METRIC_CATEGORY = "name";
 
-	public UndertowXWorkerMetrics(MetricsHandler metricsHandler) {
-		super(metricsHandler);
+	public UndertowXWorkerMetrics(UndertowWebServer undertowWebServer) {
+		super(undertowWebServer);
 	}
 
-	public UndertowXWorkerMetrics(MetricsHandler metricsHandler, String namePrefix) {
-		super(metricsHandler, namePrefix);
+	public UndertowXWorkerMetrics(UndertowWebServer undertowWebServer, String namePrefix) {
+		super(undertowWebServer, namePrefix);
 	}
 
-	public UndertowXWorkerMetrics(MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags) {
-		super(metricsHandler, namePrefix, tags);
+	public UndertowXWorkerMetrics(UndertowWebServer undertowWebServer, String namePrefix, Iterable<Tag> tags) {
+		super(undertowWebServer, namePrefix, tags);
 	}
 
 	@Override
-	public void bindTo(@NonNull MeterRegistry registry, UndertowWebServer undertowWebServer, Undertow undertow, MetricsHandler metricsHandler, String namePrefix, Iterable<Tag> tags){
-
+	public void bindTo(@NonNull MeterRegistry registry, Undertow undertow, String namePrefix, Iterable<Tag> tags){
 		// Find XnioWorkerMXBean
 		XnioWorkerMXBean workerMXBean = undertow.getWorker().getMXBean();
-
 		// xWorker 指标
 		registerXWorker(registry, workerMXBean, namePrefix, tags);
 
