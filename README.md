@@ -13,7 +13,7 @@ Undertow Metrics For Prometheus
 
 ``` xml
 <dependency>
-	<groupId>com.github.hiwepy</groupId>
+	<groupId>io.github.hiwepy</groupId>
 	<artifactId>undertow-metrics-prometheus</artifactId>
 	<version>${project.version}</version>
 </dependency>
