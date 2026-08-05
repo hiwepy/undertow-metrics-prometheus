@@ -13,7 +13,7 @@
 	<groupId>io.github.easy4j</groupId>
 	<artifactId>undertow-metrics-prometheus</artifactId>
 	<description>Undertow Metrics For Prometheus</description>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.x.20260630-SNAPSHOT</version>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://github.com/easy-4-java/${project.artifactId}</url>
 	<packaging>jar</packaging>
