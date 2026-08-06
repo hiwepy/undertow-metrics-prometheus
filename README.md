@@ -1,13 +1,10 @@
-[English](./README.md) | [简体中文](./README.zh-CN.md)
-
 # undertow-metrics-prometheus
 
-![Java](https://img.shields.io/badge/Java-21-blue)
-![License](https://img.shields.io/badge/License-Apache%202.0-blue)
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-**Undertow Metrics For Prometheus** — a Spring Boot auto-configuration module (starter style) that exposes Undertow server metrics to Prometheus through Micrometer.
+Undertow Metrics For Prometheus — a Spring Boot auto-configuration module (starter style) that exposes Undertow server metrics to Prometheus through Micrometer.
 
-**Navigation**
+## Table of Contents
 
 - [1. Project Overview](#1-project-overview)
 - [2. Features & Status](#2-features--status)
@@ -279,7 +276,7 @@ In a normal Spring Boot application you do not need any of this — `UndertowMet
 | `feature/3.0.x` | 21 | `3.0.x.*` | Latest line |
 
 - Snapshot versions follow the `1.0.x.yyyyMMdd-SNAPSHOT` scheme; releases are tagged `v{version}` and published through the project's private repository and GitHub Releases.
-- The `feature/3.0.x` line is the actively maintained JDK 8 line; upgrade to `feature/2.0.x` (JDK 17) or `feature/3.0.x` (JDK 21) for newer JDK baselines.
+- The `feature/1.0.x` line is the actively maintained JDK 8 line; upgrade to `feature/2.0.x` (JDK 17) or `feature/3.0.x` (JDK 21) for newer JDK baselines.
 
 ## 11. Contributing & License
 
