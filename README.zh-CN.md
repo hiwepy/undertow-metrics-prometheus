@@ -2,6 +2,8 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
+[![Java](https://img.shields.io/badge/Java-8-orange)](https://github.com/easy-4-java/undertow-metrics-prometheus) [![License](https://img.shields.io/badge/license-Apache%202.0-green)](./LICENSE)
+
 Undertow Metrics For Prometheus —— 一个 Spring Boot 自动配置模块（Starter 风格），通过 Micrometer 将 Undertow 服务器指标暴露给 Prometheus。
 
 ## 目录
