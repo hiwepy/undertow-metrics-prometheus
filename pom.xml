@@ -354,7 +354,8 @@
                 <additionalparam>-Xdoclint:none</additionalparam>
                 <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
                 <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-            </properties>
+            
+		<javax-servlet-api.version>4.0.1</javax-servlet-api.version></properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
 
@@ -493,6 +494,7 @@
     <!-- 版本属性定义：Java 版本、依赖版本与 Maven 插件版本统一管理 -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>17</java.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.version>3.0</maven.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
@@ -511,7 +513,7 @@
             <dependency>
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
-                <version>4.0.1</version>
+                <version>${javax-servlet-api.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
