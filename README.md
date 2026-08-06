@@ -1,13 +1,10 @@
-[English](./README.md) | [简体中文](./README.zh-CN.md)
-
 # undertow-metrics-prometheus
 
-![Java](https://img.shields.io/badge/Java-8-blue)
-![License](https://img.shields.io/badge/License-Apache%202.0-blue)
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-**Undertow Metrics For Prometheus** — a Spring Boot auto-configuration module (starter style) that exposes Undertow server metrics to Prometheus through Micrometer.
+Undertow Metrics For Prometheus — a Spring Boot auto-configuration module (starter style) that exposes Undertow server metrics to Prometheus through Micrometer.
 
-**Navigation**
+## Table of Contents
 
 - [1. Project Overview](#1-project-overview)
 - [2. Features & Status](#2-features--status)
