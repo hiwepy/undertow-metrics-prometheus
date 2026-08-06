@@ -31,7 +31,7 @@
 		<tag>${project.artifactId}</tag>
 	</scm>
 
-	    <developers>
+	        <developers>
         <developer>
             <name>Loong Wan</name>
             <email>hiwepy@gmail.com</email>
