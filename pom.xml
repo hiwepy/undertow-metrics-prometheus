@@ -271,7 +271,7 @@
                 <!-- 覆盖率插件：生成覆盖率报告并校验测试覆盖率（目标 90%） -->
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco-maven-plugin.version}</version>
+                <version>${maven-jacoco-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
@@ -345,7 +345,7 @@
             </activation>
             <properties>
                         <junit-jupiter.version>5.11.4</junit-jupiter.version>
-<central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
+<central-maven-publishing-plugin.version>0.11.0</central-maven-publishing-plugin.version>
                 <!-- Maven Plugin versions -->
                 <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
                 <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
@@ -354,7 +354,7 @@
                 <lombok.version>1.18.46</lombok.version>
                 <additionalparam>-Xdoclint:none</additionalparam>
                 <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-                <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+                <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
             </properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
@@ -478,7 +478,7 @@
                         <!-- 发布插件：将制品发布到 Maven Central Portal -->
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>${central-publishing-maven-plugin.version}</version>
+                        <version>${central-maven-publishing-plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
