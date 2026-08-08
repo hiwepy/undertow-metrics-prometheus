@@ -30,7 +30,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link UndertowMetrics} using a
@@ -133,9 +132,12 @@ public class UndertowMetricsTest {
      * not register any meters.
      */
     @Test
-    public void shouldNotRegisterAnyMetricFromBaseClassNoOp() {
+    public void shouldNotRegisterAnyMetricFromBaseClassNoOp() throws Exception {
         UndertowWebServer server = mock(UndertowWebServer.class);
-        when(server.getUndertow()).thenReturn(mock(Undertow.class));
+        // Inject undertow into the mock's private field via reflection
+        Field undertowField = UndertowWebServer.class.getDeclaredField("undertow");
+        undertowField.setAccessible(true);
+        undertowField.set(server, mock(Undertow.class));
         UndertowMetrics metrics = new RecordingUndertowMetrics(server);
         MeterRegistry registry = new SimpleMeterRegistry();
 
@@ -152,9 +154,12 @@ public class UndertowMetricsTest {
      * pass {@code null} to the {@link Undertow} overload without throwing.
      */
     @Test
-    public void shouldHandleNullUndertowGracefully() {
+    public void shouldHandleNullUndertowGracefully() throws Exception {
         UndertowWebServer server = mock(UndertowWebServer.class);
-        when(server.getUndertow()).thenReturn(null);
+        // Inject null undertow into the mock's private field via reflection
+        Field undertowField = UndertowWebServer.class.getDeclaredField("undertow");
+        undertowField.setAccessible(true);
+        undertowField.set(server, null);
 
         RecordingUndertowMetrics metrics = new RecordingUndertowMetrics(server);
         metrics.bindTo(new SimpleMeterRegistry());
