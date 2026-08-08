@@ -22,6 +22,7 @@ import io.undertow.Undertow;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.web.embedded.undertow.UndertowWebServer;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -89,12 +90,20 @@ public class UndertowMetricsTest {
     /**
      * The public {@code bindTo(MeterRegistry)} method must fan the call out
      * to both package-private overloads using the configured state.
+     *
+     * <p>Because {@link UndertowMetrics#getUndertow} uses reflection to
+     * read the private {@code undertow} field, we inject the value via
+     * reflection on the mock.</p>
      */
     @Test
-    public void shouldFanOutToBothOverloadsWhenBinding() {
+    public void shouldFanOutToBothOverloadsWhenBinding() throws Exception {
         UndertowWebServer server = mock(UndertowWebServer.class);
         Undertow undertow = mock(Undertow.class);
-        when(server.getUndertow()).thenReturn(undertow);
+
+        // Inject undertow into the mock's private field via reflection
+        Field undertowField = UndertowWebServer.class.getDeclaredField("undertow");
+        undertowField.setAccessible(true);
+        undertowField.set(server, undertow);
 
         RecordingUndertowMetrics metrics = new RecordingUndertowMetrics(server, "p", Collections.emptyList());
         MeterRegistry registry = new SimpleMeterRegistry();

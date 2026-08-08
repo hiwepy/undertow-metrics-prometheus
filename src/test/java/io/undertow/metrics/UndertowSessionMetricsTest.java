@@ -162,11 +162,28 @@ public class UndertowSessionMetricsTest {
      */
     @Test
     public void shouldFanOutToWebServerOverload() {
+        SessionManagerStatistics statistics = mock(SessionManagerStatistics.class);
+        when(statistics.getMaxActiveSessions()).thenReturn(0L);
+        when(statistics.getActiveSessionCount()).thenReturn(0L);
+        when(statistics.getCreatedSessionCount()).thenReturn(0L);
+        when(statistics.getExpiredSessionCount()).thenReturn(0L);
+        when(statistics.getRejectedSessions()).thenReturn(0L);
+        when(statistics.getHighestSessionCount()).thenReturn(0L);
+
+        SessionManager sessionManager = mock(SessionManager.class);
+        when(sessionManager.getStatistics()).thenReturn(statistics);
+
+        Deployment deployment = mock(Deployment.class);
+        when(deployment.getSessionManager()).thenReturn(sessionManager);
+
+        DeploymentManager manager = mock(DeploymentManager.class);
+        when(manager.getDeployment()).thenReturn(deployment);
+
         UndertowServletWebServer server = mock(UndertowServletWebServer.class);
+        when(server.getDeploymentManager()).thenReturn(manager);
 
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        MeterRegistry unused = registry;
-        new UndertowSessionMetrics(server).bindTo(unused);
+        new UndertowSessionMetrics(server).bindTo(registry);
 
         // 6 meters registered (2 gauges + 3 counters + 1 time gauge).
         assertEquals(6L, registry.getMeters().size());

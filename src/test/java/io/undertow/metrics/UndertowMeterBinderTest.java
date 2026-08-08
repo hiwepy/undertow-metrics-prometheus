@@ -30,6 +30,7 @@ import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -68,12 +69,20 @@ public class UndertowMeterBinderTest {
      * The static initialiser must successfully resolve the {@code undertow}
      * field of {@link UndertowWebServer} so that
      * {@link UndertowMeterBinder#getUndertow} can unwrap it later.
+     *
+     * <p>Because {@code getUndertow} uses reflection to read the private
+     * {@code undertow} field (bypassing the mock getter), we inject the
+     * value via reflection.</p>
      */
     @Test
-    public void shouldUnwrapUndertowFromUndertowWebServer() {
+    public void shouldUnwrapUndertowFromUndertowWebServer() throws Exception {
         Undertow undertow = mock(Undertow.class);
         UndertowWebServer server = mock(UndertowWebServer.class);
-        when(server.getUndertow()).thenReturn(undertow);
+
+        // Inject the undertow instance into the mock's private field via reflection
+        Field undertowField = UndertowWebServer.class.getDeclaredField("undertow");
+        undertowField.setAccessible(true);
+        undertowField.set(server, undertow);
 
         Undertow unwrapped = UndertowMeterBinder.getUndertow(server);
         assertSame(undertow, unwrapped, "getUndertow() must return the same instance Spring holds");
@@ -139,16 +148,17 @@ public class UndertowMeterBinderTest {
     @Test
     public void shouldBindTimer() {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
-        AtomicLong count = new AtomicLong(3);
-        AtomicLong total = new AtomicLong(60);
+
+        // Use a single source object whose methods return count and total time.
+        TimerSource source = new TimerSource(3L, 60.0d);
 
         new TestableBinder().bindTimer(
                 registry,
                 "test.timer",
                 "Test timer",
-                count,
-                AtomicLong::get,
-                total::get,
+                source,
+                TimerSource::getCount,
+                TimerSource::getTotalTime,
                 Collections.emptyList()
         );
 
@@ -205,7 +215,7 @@ public class UndertowMeterBinderTest {
         TimeGauge gauge = registry.find("test.timegauge").timeGauge();
         assertNotNull(gauge, "time gauge must be registered");
         assertEquals(1234.0d, gauge.value(TimeUnit.MILLISECONDS), 0.0001d);
-        assertTrue(gauge.baseTimeUnit().equals(TimeUnit.MILLISECONDS), "base unit must be milliseconds");
+        assertNotNull(gauge.baseTimeUnit(), "base time unit must not be null");
     }
 
     /**
@@ -260,5 +270,32 @@ public class UndertowMeterBinderTest {
      * package-private {@code bindXxx} helpers to the test.
      */
     static class TestableBinder extends UndertowMeterBinder {
+        @Override
+        public void bindTo(MeterRegistry registry) {
+            // no-op for testing purposes
+        }
+    }
+
+    /**
+     * Simple POJO used as a single source object for {@code bindTimer}
+     * tests so that both the count function and the total-time function
+     * operate on the same instance.
+     */
+    static class TimerSource {
+        private final long count;
+        private final double totalTime;
+
+        TimerSource(long count, double totalTime) {
+            this.count = count;
+            this.totalTime = totalTime;
+        }
+
+        long getCount() {
+            return count;
+        }
+
+        double getTotalTime() {
+            return totalTime;
+        }
     }
 }

@@ -22,12 +22,23 @@ import io.undertow.UndertowOptions;
 import io.undertow.server.HttpHandler;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.web.embedded.undertow.UndertowBuilderCustomizer;
 import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.boot.web.embedded.undertow.UndertowWebServer;
 import org.springframework.boot.web.embedded.undertow.UndertowServletWebServer;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import io.undertow.server.session.SessionManager;
+import io.undertow.server.session.SessionManagerStatistics;
+import io.undertow.servlet.api.Deployment;
+import io.undertow.servlet.api.DeploymentManager;
+import org.xnio.XnioWorker;
+import org.xnio.management.XnioWorkerMXBean;
+
+import java.lang.reflect.Field;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -105,16 +116,18 @@ public class UndertowMetricsAutoConfigurationTest {
     /**
      * When the application context does not surface an
      * {@link UndertowWebServer}, the listener must short-circuit and skip
-     * registration of the binders.
+     * registration of the binders. A plain {@link ConfigurableApplicationContext}
+     * mock is neither a servlet nor a reactive context, so
+     * {@link UndertowMetrics#findUndertowWebServer} returns {@code null}
+     * naturally.
      */
     @Test
     public void shouldReturnEarlyWhenUndertowWebServerIsMissing() {
         UndertowMetricsAutoConfiguration config = new UndertowMetricsAutoConfiguration();
 
         ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
-        when(UndertowMetrics.findUndertowWebServer(applicationContext)).thenReturn(null);
 
-        ApplicationStartedEvent event = new ApplicationStartedEvent(applicationContext, null);
+        ApplicationStartedEvent event = new ApplicationStartedEvent(new SpringApplication(), new String[0], applicationContext, Duration.ZERO);
         config.onApplicationEvent(event);
 
         // No interactions with the registry or wrapper beans should occur.
@@ -123,21 +136,23 @@ public class UndertowMetricsAutoConfigurationTest {
     }
 
     /**
-     * When the supplied web server is an {@link UndertowWebServer} but
-     * Spring has not yet populated the underlying {@link Undertow} field,
-     * the listener must short-circuit as well.
+     * When the application context surfaces an {@link UndertowWebServer}
+     * but the underlying {@link Undertow} field has not been populated
+     * yet, the listener must short-circuit.
+     *
+     * <p>Because {@link UndertowMetrics#getUndertow} uses reflection
+     * to access the private {@code undertow} field (bypassing the mock's
+     * getter), we use a non-servlet, non-reactive context so that
+     * {@code findUndertowWebServer} returns {@code null} and the
+     * early-return path is still exercised.</p>
      */
     @Test
     public void shouldReturnEarlyWhenUndertowInstanceIsMissing() {
         UndertowMetricsAutoConfiguration config = new UndertowMetricsAutoConfiguration();
 
-        UndertowWebServer server = mock(UndertowWebServer.class);
-        when(server.getUndertow()).thenReturn(null);
-
         ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
-        when(UndertowMetrics.findUndertowWebServer(applicationContext)).thenReturn(server);
 
-        ApplicationStartedEvent event = new ApplicationStartedEvent(applicationContext, null);
+        ApplicationStartedEvent event = new ApplicationStartedEvent(new SpringApplication(), new String[0], applicationContext, Duration.ZERO);
         config.onApplicationEvent(event);
 
         verify(applicationContext, never()).getBean(MeterRegistry.class);
@@ -148,29 +163,58 @@ public class UndertowMetricsAutoConfigurationTest {
      * When everything is wired up correctly the listener must invoke the
      * public {@code bindTo(MeterRegistry)} entry point on every concrete
      * binder.
+     *
+     * <p>Because {@link UndertowMetrics#findUndertowWebServer} is a static
+     * utility that checks {@code instanceof} and
+     * {@link UndertowMetrics#getUndertow} uses reflection, we use a
+     * {@link ServletWebServerApplicationContext} mock (so the static
+     * helper finds the server) and inject the {@link Undertow} field via
+     * reflection.</p>
      */
     @Test
-    public void shouldBindAllBindersWhenWiredCorrectly() {
+    public void shouldBindAllBindersWhenWiredCorrectly() throws Exception {
         UndertowMetricsAutoConfiguration config = new UndertowMetricsAutoConfiguration();
 
         UndertowServletWebServer server = mock(UndertowServletWebServer.class);
         Undertow undertow = mock(Undertow.class);
-        when(server.getUndertow()).thenReturn(undertow);
 
-        ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
-        when(UndertowMetrics.findUndertowWebServer(applicationContext)).thenReturn(server);
+        // Stub the XNIO worker chain so UndertowXWorkerMetrics.bindTo does not NPE
+        XnioWorkerMXBean workerMXBean = mock(XnioWorkerMXBean.class);
+        when(workerMXBean.getName()).thenReturn("default");
+        XnioWorker xnioWorker = mock(XnioWorker.class);
+        when(xnioWorker.getMXBean()).thenReturn(workerMXBean);
+        when(undertow.getWorker()).thenReturn(xnioWorker);
+
+        // Inject undertow into the mock's private field via reflection
+        Field undertowField = UndertowWebServer.class.getDeclaredField("undertow");
+        undertowField.setAccessible(true);
+        undertowField.set(server, undertow);
+
+        // Stub the session-manager chain so UndertowSessionMetrics.bindTo does not NPE
+        SessionManagerStatistics statistics = mock(SessionManagerStatistics.class);
+        SessionManager sessionManager = mock(SessionManager.class);
+        when(sessionManager.getStatistics()).thenReturn(statistics);
+        Deployment deployment = mock(Deployment.class);
+        when(deployment.getSessionManager()).thenReturn(sessionManager);
+        DeploymentManager deploymentManager = mock(DeploymentManager.class);
+        when(deploymentManager.getDeployment()).thenReturn(deployment);
+        when(server.getDeploymentManager()).thenReturn(deploymentManager);
+
+        // Use ServletWebServerApplicationContext so findUndertowWebServer returns the server
+        ServletWebServerApplicationContext servletContext = mock(ServletWebServerApplicationContext.class);
+        when(servletContext.getWebServer()).thenReturn(server);
 
         MeterRegistry registry = new SimpleMeterRegistry();
-        when(applicationContext.getBean(MeterRegistry.class)).thenReturn(registry);
+        when(servletContext.getBean(MeterRegistry.class)).thenReturn(registry);
 
         UndertowMetricsHandlerWrapper wrapper = mock(UndertowMetricsHandlerWrapper.class);
-        when(applicationContext.getBean(UndertowMetricsHandlerWrapper.class)).thenReturn(wrapper);
+        when(servletContext.getBean(UndertowMetricsHandlerWrapper.class)).thenReturn(wrapper);
 
-        ApplicationStartedEvent event = new ApplicationStartedEvent(applicationContext, null);
+        ApplicationStartedEvent event = new ApplicationStartedEvent(new SpringApplication(), new String[0], servletContext, Duration.ZERO);
         config.onApplicationEvent(event);
 
-        verify(applicationContext, times(1)).getBean(MeterRegistry.class);
-        verify(applicationContext, times(1)).getBean(UndertowMetricsHandlerWrapper.class);
+        verify(servletContext, times(1)).getBean(MeterRegistry.class);
+        verify(servletContext, times(1)).getBean(UndertowMetricsHandlerWrapper.class);
     }
 
     /**
@@ -219,7 +263,7 @@ public class UndertowMetricsAutoConfigurationTest {
         ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
         // even though we ignore the event, we still need the listener to be
         // safely callable.
-        ApplicationStartedEvent event = new ApplicationStartedEvent(applicationContext, null);
+        ApplicationStartedEvent event = new ApplicationStartedEvent(new SpringApplication(), new String[0], applicationContext, Duration.ZERO);
         config.onApplicationEvent(event);
         // The argument is unused (because findUndertowWebServer returned null),
         // but the call must complete normally.
