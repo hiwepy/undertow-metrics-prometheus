@@ -60,7 +60,7 @@ import org.springframework.context.annotation.Bean;
  * factory auto-configuration) so that the handler-chain wrapper is installed
  * before any web server is built.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see UndertowMetricsHandlerWrapper
  * @see UndertowConnectorMetrics

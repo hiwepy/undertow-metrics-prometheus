@@ -49,7 +49,7 @@ import java.util.Collections;
  * <p>Both overloads are intentionally empty no-ops; concrete subclasses
  * override only the ones they need.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see UndertowMeterBinder
  * @see UndertowConnectorMetrics

@@ -40,7 +40,7 @@ import io.undertow.server.handlers.MetricsHandler;
  * <a href="https://frandorado.github.io/spring/2020/03/31/spring-actuator-undertow.html">
  * spring-actuator-undertow</a>.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see HandlerWrapper
  * @see MetricsHandler

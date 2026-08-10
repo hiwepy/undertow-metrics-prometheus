@@ -43,7 +43,7 @@ import java.util.Objects;
  * {@code .xwork.worker.pool.*} and {@code .xwork.io.thread.count} so that
  * Prometheus queries can target worker-related metrics directly.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see UndertowMetrics
  * @see XnioWorkerMXBean

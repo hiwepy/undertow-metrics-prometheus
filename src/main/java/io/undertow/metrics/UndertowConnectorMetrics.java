@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  * metrics from session, worker or request-level metrics emitted by sibling
  * binders.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see UndertowMetrics
  * @see UndertowSessionMetrics

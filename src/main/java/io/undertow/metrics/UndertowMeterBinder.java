@@ -61,7 +61,7 @@ import java.util.function.ToLongFunction;
  * exactly once in a static initialiser; subsequent reads reuse the cached,
  * accessible {@link Field}.</p>
  *
- * @author [@Loong Wan](https://github.com/loong10k)
+ * @author <a href="https://github.com/loong10k">Loong Wan</a>
  * @since 3.0.0
  * @see MeterBinder
  * @see UndertowMetrics
