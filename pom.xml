@@ -344,18 +344,18 @@
                 <jdk>[1.8,)</jdk>
             </activation>
             <properties>
-                        <junit-jupiter.version>5.11.4</junit-jupiter.version>
-<central-maven-publishing-plugin.version>0.11.0</central-maven-publishing-plugin.version>
-                <!-- Maven Plugin versions -->
-                <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
-                <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-                <!-- Dependency versions -->
-                <slf4j.version>2.0.18</slf4j.version>
-                <lombok.version>1.18.46</lombok.version>
-                <additionalparam>-Xdoclint:none</additionalparam>
-                <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-                <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
-        <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
+                    <!-- Dependency versions -->
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <central-maven-publishing-plugin.version>0.11.0</central-maven-publishing-plugin.version>
+                    <junit-jupiter.version>5.11.4</junit-jupiter.version>
+                    <lombok.version>1.18.46</lombok.version>
+                    <slf4j.version>2.0.18</slf4j.version>
+                    <!-- Maven Plugin versions -->
+                    <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
+                    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+                    <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
+                    <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+                    <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
             </properties>
         </profile>
         <!-- 发布到 Maven Central Portal：mvn -Prelease deploy（GPG 签名 + 源码 + Javadoc + Central 发布插件） -->
@@ -494,18 +494,20 @@
 
     <!-- 版本属性定义：Java 版本、依赖版本与 Maven 插件版本统一管理 -->
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.8</java.version>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.version>3.0</maven.version>
-        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
-        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
-        <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
-        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
-        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
-        <maven-nexus-staging-plugin.version>1.7.0</maven-nexus-staging-plugin.version>
-        <micrometer.version>1.10.6</micrometer.version>
-        <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
+            <java.version>1.8</java.version>
+            <maven.version>3.0</maven.version>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <!-- Dependency versions -->
+            <micrometer.version>1.10.6</micrometer.version>
+            <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+            <!-- Maven Plugin versions -->
+            <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
+            <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+            <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+            <maven-nexus-staging-plugin.version>1.7.0</maven-nexus-staging-plugin.version>
+            <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
+            <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
+            <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
     </properties>
 
     <!-- 依赖版本统一管理（dependencyManagement） -->
