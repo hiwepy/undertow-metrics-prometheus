@@ -506,6 +506,11 @@
             <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
             <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
             <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <javax-servlet-api.version>4.0.1</javax-servlet-api.version>
+        <lombok.version>1.18.46</lombok.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     </properties>
 
     
