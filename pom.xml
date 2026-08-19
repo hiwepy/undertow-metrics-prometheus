@@ -16,6 +16,7 @@
     <packaging>jar</packaging>
 
     
+    <!-- 开源协议采用 Apache 2.0 协议 -->
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -24,6 +25,7 @@
     </licenses>
 
     
+    <!-- 源码仓库（SCM）信息 -->
     <scm>
         <connection>scm:git:https://github.com/easy-4-java/${project.artifactId}.git</connection>
         <developerConnection>scm:git:https://github.com/easy-4-java/${project.artifactId}.git</developerConnection>
@@ -32,6 +34,7 @@
     </scm>
 
     
+    <!-- 开发者信息 -->
     <developers>
         <developer>
             <name>Loong Wan</name>
@@ -45,6 +48,165 @@
     </developers>
 
     
+    <profiles>
+        <profile>
+            <id>disable-javadoc-doclint</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+            <properties>
+            <!-- Dependency versions -->
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <javax-servlet-api.version>4.0.1</javax-servlet-api.version>
+                    <junit-jupiter.version>6.1.0</junit-jupiter.version>
+                    <lombok.version>1.18.46</lombok.version>
+                    <slf4j.version>2.0.18</slf4j.version>
+            <!-- Maven Plugin versions -->
+                    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+                    <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+                    <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+            </properties>
+        </profile>
+        
+
+        <profile>
+            <id>release</id>
+        </profile>
+        
+
+        <profile>
+            <id>central</id>
+        </profile>
+    </profiles>
+
+    
+    <properties>
+        <!-- ═══ 第一段: 基础属性（自然排序）═══ -->
+            <java.version>21</java.version>
+            <maven.compiler.release>${java.version}</maven.compiler.release>
+            <maven.version>4.0.0-rc-5</maven.version>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <!-- Dependency versions -->
+            <micrometer.version>1.10.6</micrometer.version>
+            <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+            <!-- Maven Plugin versions -->
+            <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
+            <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+            <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
+            <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+            <maven-nexus-staging-plugin.version>1.7.0</maven-nexus-staging-plugin.version>
+            <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
+            <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
+            <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+        <javax-servlet-api.version>4.0.1</javax-servlet-api.version>
+        <lombok.version>1.18.46</lombok.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+    </properties>
+
+    
+    <dependencyManagement>
+        <dependencies>
+            
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax-servlet-api.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    
+    <dependencies>
+        
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.micrometer</groupId>
+                    <artifactId>micrometer-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-undertow</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+    <!-- 制品发布仓库配置（distributionManagement） -->
     <distributionManagement>
         <repository>
             <id>2624322-release-6F6h6R</id>
@@ -55,8 +217,7 @@
             <url>https://packages.aliyun.com/6927b116e6c3e0425dbdf60d/maven/2624322-snapshot-3eoov3</url>
         </snapshotRepository>
     </distributionManagement>
-
-    
+    <!-- 构建配置（Build） -->
     <build>
         <pluginManagement>
             <plugins>
@@ -331,286 +492,4 @@
             </plugin>
         </plugins>
     </build>
-
-    
-    <profiles>
-        <profile>
-            <id>disable-javadoc-doclint</id>
-            <activation>
-                <jdk>[1.8,)</jdk>
-            </activation>
-            <properties>
-                    <!-- Dependency versions -->
-                    <additionalparam>-Xdoclint:none</additionalparam>
-                    <javax-servlet-api.version>4.0.1</javax-servlet-api.version>
-                    <junit-jupiter.version>6.1.0</junit-jupiter.version>
-                    <lombok.version>1.18.46</lombok.version>
-                    <slf4j.version>2.0.18</slf4j.version>
-                    <!-- Maven Plugin versions -->
-                    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-                    <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
-                    <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-            </properties>
-        </profile>
-        
-
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-install-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-release-plugin</artifactId>
-                    </plugin>
-
-                    
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
-
-        <profile>
-            <id>central</id>
-            <build>
-                <plugins>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    
-                    <plugin>
-                        
-                        <groupId>org.sonatype.central</groupId>
-                        <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>${maven-central-publishing-plugin.version}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <publishingServerId>central</publishingServerId>
-                            <autoPublish>true</autoPublish>
-                            <waitUntil>published</waitUntil>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
-    
-    <properties>
-        <!-- ═══ 第一段: 基础属性（自然排序）═══ -->
-            <java.version>21</java.version>
-            <maven.compiler.release>${java.version}</maven.compiler.release>
-            <maven.version>4.0.0-rc-5</maven.version>
-            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-            <!-- Dependency versions -->
-            <micrometer.version>1.10.6</micrometer.version>
-            <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-            <!-- Maven Plugin versions -->
-            <maven-central-publishing-plugin.version>0.11.0</maven-central-publishing-plugin.version>
-            <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
-            <maven-jacoco-plugin.version>0.8.15</maven-jacoco-plugin.version>
-            <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
-            <maven-nexus-staging-plugin.version>1.7.0</maven-nexus-staging-plugin.version>
-            <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
-            <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
-            <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
-        <javax-servlet-api.version>4.0.1</javax-servlet-api.version>
-        <lombok.version>1.18.46</lombok.version>
-        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
-        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-    </properties>
-
-    
-    <dependencyManagement>
-        <dependencies>
-            
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>${javax-servlet-api.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    
-    <dependencies>
-        
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.micrometer</groupId>
-                    <artifactId>micrometer-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-undertow</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 </project>
